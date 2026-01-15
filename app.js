@@ -10,6 +10,7 @@ const levelValue = document.getElementById("levelValue");
 const totalXp = document.getElementById("totalXp");
 const levelHint = document.getElementById("levelHint");
 const levelProgress = document.getElementById("levelProgress");
+
 const taskTemplate = document.getElementById("taskItemTemplate");
 
 const defaultState = {
@@ -24,6 +25,7 @@ const loadState = () => {
   }
   const parsed = JSON.parse(raw);
   return {
+
     tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
     totalXp: Number.isFinite(parsed.totalXp) ? parsed.totalXp : 0,
   };
