@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Life RPG MVP</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <nav class="nav">
+        <button class="nav__button nav__button--active" type="button" data-view="dashboard">
+          Dashboard
+        </button>
+        <button class="nav__button" type="button" data-view="history">History</button>
+        <button class="nav__button" type="button" data-view="report">Report</button>
+      </nav>
+      <header class="app__header">
+        <div>
+          <p class="app__subtitle">Life RPG</p>
+          <h1 class="app__title">任務冒險清單</h1>
+          <p class="app__streak" id="streakDisplay">連續 0 天</p>
+        </div>
+        <div class="level-card">
+          <p class="level-card__label">目前等級</p>
+          <p class="level-card__value" id="levelValue">Lv 1</p>
+          <p class="level-card__xp" id="levelMultiplier">倍率 x1.0</p>
+        </div>
+      </header>
+
+      <section class="view view--active" id="dashboardView" data-view="dashboard">
+        <section class="stats">
+          <div class="stats__item">
+            <p class="stats__label">總經驗</p>
+            <p class="stats__value" id="totalXp">0 XP</p>
+          </div>
+          <div class="stats__item stats__item--wide">
+            <div class="progress">
+              <div class="progress__bar" id="levelProgress"></div>
+            </div>
+            <p class="stats__hint" id="levelHint">距離 Lv 2 還需要 100 XP</p>
+          </div>
+        </section>
+
+        <section class="daily">
+          <div class="section-header">
+            <div>
+              <h2>每日任務</h2>
+              <p class="section-subtitle">每天 00:00 自動更新，未完成將標記失敗。</p>
+            </div>
+            <div class="daily__actions">
+              <p class="daily__date" id="dailyDate">今日任務</p>
+              <button class="ghost-button" id="rerollButton" type="button">
+                重新抽選今日任務
+              </button>
+            </div>
+          </div>
+          <ul class="tasks__list" id="dailyTaskList"></ul>
+          <div class="daily-onboarding" id="dailyOnboarding" hidden>
+            <p>請先到「每日任務池」新增至少 3 個啟用任務，才能抽選每日任務。</p>
+          </div>
+        </section>
+
+        <section class="yesterday">
+          <div class="section-header">
+            <div>
+              <h2>昨日摘要</h2>
+              <p class="section-subtitle">昨日每日任務成果概覽。</p>
+            </div>
+          </div>
+          <div class="yesterday__content">
+            <div class="stats__item">
+              <p class="stats__label">昨日獲得 XP</p>
+              <p class="stats__value" id="yesterdayXp">0 XP</p>
+            </div>
+            <div class="stats__item">
+              <p class="stats__label">任務完成狀態</p>
+              <p class="stats__value" id="yesterdayCompletion">尚未有資料</p>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" id="historyView" data-view="history">
+        <section class="history">
+          <div class="section-header">
+            <div>
+              <h2>歷史時間軸</h2>
+              <p class="section-subtitle">每天的任務成果與成長記錄。</p>
+            </div>
+            <button class="share-button" id="timelineShareButton" type="button">
+              分享時間軸
+            </button>
+          </div>
+          <div class="history__content">
+            <div class="history__list" id="historyList"></div>
+            <div class="history__charts">
+              <div class="chart-card">
+                <p class="chart-card__title">XP 成長曲線</p>
+                <canvas id="xpChart" width="600" height="240"></canvas>
+              </div>
+              <div class="chart-card">
+                <p class="chart-card__title">等級成長曲線</p>
+                <canvas id="levelChart" width="600" height="240"></canvas>
+              </div>
+              <div class="chart-card">
+                <p class="chart-card__title">連續天數曲線</p>
+                <canvas id="streakChart" width="600" height="240"></canvas>
+              </div>
+            </div>
+          </div>
+          <a
+            class="share-download"
+            id="timelineShareDownload"
+            download="life-rpg-timeline.png"
+            hidden
+          >
+            下載時間軸分享卡
+          </a>
+          <canvas id="timelineCanvas" width="1080" height="1920" hidden></canvas>
+        </section>
+
+        <section class="quest-pool">
+          <div class="section-header">
+            <div>
+              <h2>每日任務池</h2>
+              <p class="section-subtitle">管理每日任務抽選池，可停用或刪除任務。</p>
+            </div>
+          </div>
+          <form id="questForm" class="quest-form">
+            <input
+              type="text"
+              id="questTitleInput"
+              placeholder="任務名稱，例如：寫 500 字筆記"
+              required
+            />
+            <input type="number" id="questXpInput" min="1" max="500" value="20" required />
+            <button type="submit">新增任務</button>
+          </form>
+          <div class="quest-list" id="questList"></div>
+        </section>
+
+        <section class="composer">
+          <h2>新增任務</h2>
+          <form id="taskForm" class="composer__form">
+            <input
+              type="text"
+              id="taskInput"
+              placeholder="例如：完成晨跑 30 分鐘"
+              required
+            />
+            <input
+              type="number"
+              id="xpInput"
+              min="1"
+              max="500"
+              value="20"
+              required
+            />
+            <button type="submit">加入任務</button>
+          </form>
+        </section>
+
+        <section class="tasks">
+          <div class="tasks__header">
+            <h2>任務清單</h2>
+            <p class="tasks__meta" id="taskCount">0 個任務</p>
+          </div>
+          <ul class="tasks__list" id="taskList"></ul>
+        </section>
+
+        <section class="achievements">
+          <div class="section-header">
+            <div>
+              <h2>成就</h2>
+              <p class="section-subtitle">解鎖里程碑，成為更高階冒險者。</p>
+            </div>
+            <button class="share-button" id="shareButton" type="button">
+              產生成就分享卡
+            </button>
+          </div>
+          <div class="achievement-grid" id="achievementGrid"></div>
+          <a
+            class="share-download"
+            id="shareDownload"
+            download="life-rpg-share.png"
+            hidden
+          >
+            下載分享卡
+          </a>
+          <canvas id="shareCanvas" width="1080" height="1920" hidden></canvas>
+        </section>
+      </section>
+
+      <section class="view" id="reportView" data-view="report">
+        <section class="report">
+          <div class="section-header">
+            <div>
+              <h2>每月報告</h2>
+              <p class="section-subtitle">最近成長統計與報告摘要。</p>
+            </div>
+            <button class="share-button" id="reportShareButton" type="button">
+              分享報告
+            </button>
+          </div>
+          <div class="report__grid">
+            <div class="stats__item">
+              <p class="stats__label">本月獲得 XP</p>
+              <p class="stats__value" id="monthlyXp">0 XP</p>
+            </div>
+            <div class="stats__item">
+              <p class="stats__label">本月活躍天數</p>
+              <p class="stats__value" id="monthlyActiveDays">0 天</p>
+            </div>
+            <div class="stats__item">
+              <p class="stats__label">本月完成任務</p>
+              <p class="stats__value" id="monthlyCompletedQuests">0 件</p>
+            </div>
+            <div class="stats__item">
+              <p class="stats__label">本月最佳連續</p>
+              <p class="stats__value" id="monthlyBestStreak">0 天</p>
+            </div>
+            <div class="stats__item">
+              <p class="stats__label">目前等級 / XP</p>
+              <p class="stats__value" id="monthlyLevel">Lv 1 · 0 XP</p>
+            </div>
+          </div>
+          <div class="report__summary">
+            <div class="report__summary-item">
+              <p class="stats__label">最近 7 天 XP</p>
+              <p class="stats__value" id="last7Xp">0 XP</p>
+            </div>
+            <div class="report__summary-item">
+              <p class="stats__label">最近 30 天 XP</p>
+              <p class="stats__value" id="last30Xp">0 XP</p>
+            </div>
+            <div class="report__summary-item">
+              <p class="stats__label">最近 30 天完成任務</p>
+              <p class="stats__value" id="last30Completed">0 件</p>
+            </div>
+            <div class="report__summary-item">
+              <p class="stats__label">最近 30 天最佳連續</p>
+              <p class="stats__value" id="last30BestStreak">0 天</p>
+            </div>
+            <div class="report__summary-item">
+              <p class="stats__label">目前連續天數</p>
+              <p class="stats__value" id="currentStreak">0 天</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="report-timeline">
+          <div class="section-header">
+            <div>
+              <h2>近 30 天摘要</h2>
+              <p class="section-subtitle">每日 XP 與完成狀態。</p>
+            </div>
+          </div>
+          <div class="report-timeline__list" id="reportTimelineList"></div>
+        </section>
+        <a
+          class="share-download"
+          id="reportShareDownload"
+          download="life-rpg-report.png"
+          hidden
+        >
+          下載報告分享卡
+        </a>
+        <canvas id="reportCanvas" width="1080" height="1920" hidden></canvas>
+      </section>
+    </main>
+
+    <template id="taskItemTemplate">
+      <li class="task">
+        <label class="task__main">
+          <input type="checkbox" class="task__checkbox" />
+          <span class="task__title"></span>
+        </label>
+        <div class="task__xp"></div>
+        <button class="task__delete" type="button">刪除</button>
+      </li>
+    </template>
+
+    <template id="dailyTaskTemplate">
+      <li class="task task--daily">
+        <label class="task__main">
+          <input type="checkbox" class="task__checkbox" />
+          <span class="task__title"></span>
+        </label>
+        <div class="task__xp"></div>
+        <span class="task__status"></span>
+      </li>
+    </template>
+
+    <template id="achievementTemplate">
+      <div class="achievement">
+        <div class="achievement__icon">🏆</div>
+        <div>
+          <p class="achievement__title"></p>
+          <p class="achievement__status"></p>
+        </div>
+      </div>
+    </template>
+
+    <template id="historyItemTemplate">
+      <details class="history-item">
+        <summary class="history-item__summary">
+          <div>
+            <p class="history-item__date"></p>
+            <div class="history-item__meta">
+              <span class="history-item__streak"></span>
+              <span class="history-item__level"></span>
+            </div>
+          </div>
+          <span class="history-item__xp"></span>
+        </summary>
+        <div class="history-item__tasks"></div>
+      </details>
+    </template>
+
+    <template id="questItemTemplate">
+      <div class="quest-item">
+        <label class="quest-item__main">
+          <input type="checkbox" class="quest-item__toggle" />
+          <span class="quest-item__title"></span>
+        </label>
+        <span class="quest-item__xp"></span>
+        <div class="quest-item__actions">
+          <button class="quest-item__edit" type="button">編輯</button>
+          <button class="quest-item__delete" type="button">刪除</button>
+        </div>
+      </div>
+    </template>
+
+    <template id="questEditTemplate">
+      <div class="quest-item quest-item--edit">
+        <div class="quest-item__edit-fields">
+          <input type="text" class="quest-item__input" />
+          <input type="number" class="quest-item__input quest-item__input--xp" min="1" max="500" />
+        </div>
+        <div class="quest-item__actions">
+          <button class="quest-item__save" type="button">儲存</button>
+          <button class="quest-item__cancel" type="button">取消</button>
+        </div>
+      </div>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
