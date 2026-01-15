@@ -46,6 +46,7 @@ const dailyTaskTemplate = document.getElementById("dailyTaskTemplate");
 const achievementTemplate = document.getElementById("achievementTemplate");
 const historyItemTemplate = document.getElementById("historyItemTemplate");
 const questItemTemplate = document.getElementById("questItemTemplate");
+const questEditTemplate = document.getElementById("questEditTemplate");
 const navButtons = document.querySelectorAll(".nav__button");
 const views = document.querySelectorAll(".view");
 
@@ -417,6 +418,7 @@ const renderQuestPool = () => {
     const toggle = fragment.querySelector(".quest-item__toggle");
     const title = fragment.querySelector(".quest-item__title");
     const xp = fragment.querySelector(".quest-item__xp");
+    const editButton = fragment.querySelector(".quest-item__edit");
     const deleteButton = fragment.querySelector(".quest-item__delete");
 
     toggle.checked = quest.enabled;
@@ -429,8 +431,49 @@ const renderQuestPool = () => {
       render();
     });
 
+    editButton.addEventListener("click", () => {
+      const editFragment = questEditTemplate.content.cloneNode(true);
+      const editItem = editFragment.querySelector(".quest-item");
+      const titleInput = editFragment.querySelector(".quest-item__input");
+      const xpInput = editFragment.querySelector(".quest-item__input--xp");
+      const saveButton = editFragment.querySelector(".quest-item__save");
+      const cancelButton = editFragment.querySelector(".quest-item__cancel");
+
+      titleInput.value = quest.title;
+      xpInput.value = quest.xp;
+
+      saveButton.addEventListener("click", () => {
+        const nextTitle = titleInput.value.trim();
+        const nextXp = Math.max(1, Number(xpInput.value) || quest.xp);
+        if (!nextTitle) {
+          return;
+        }
+        quest.title = nextTitle;
+        quest.xp = nextXp;
+        state.daily.tasks = state.daily.tasks.map((task) =>
+          task.id === quest.id
+            ? {
+                ...task,
+                title: nextTitle,
+                xp: nextXp,
+              }
+            : task
+        );
+        saveState(state);
+        render();
+      });
+
+      cancelButton.addEventListener("click", () => {
+        renderQuestPool();
+      });
+
+      item.replaceWith(editItem);
+      titleInput.focus();
+    });
+
     deleteButton.addEventListener("click", () => {
       state.questPool = state.questPool.filter((poolQuest) => poolQuest.id !== quest.id);
+      state.daily.tasks = state.daily.tasks.filter((task) => task.id !== quest.id);
       saveState(state);
       render();
     });

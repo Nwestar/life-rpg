@@ -513,6 +513,10 @@ body {
   background: #f8fafc;
 }
 
+.quest-item--edit {
+  grid-template-columns: 1fr auto;
+}
+
 .quest-item__main {
   display: flex;
   align-items: center;
@@ -528,6 +532,43 @@ body {
 .quest-item__xp {
   font-weight: 600;
   color: #4338ca;
+}
+
+.quest-item__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.quest-item__edit,
+.quest-item__save,
+.quest-item__cancel {
+  border: none;
+  background: #e2e8f0;
+  color: #334155;
+  padding: 6px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.quest-item__save {
+  background: #22c55e;
+  color: #ffffff;
+}
+
+.quest-item__edit-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px;
+  gap: 10px;
+  align-items: center;
+}
+
+.quest-item__input {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #cbd5f5;
+  font-size: 0.95rem;
 }
 
 .quest-item__delete {
@@ -616,6 +657,15 @@ body {
   }
 
   .quest-form {
+    grid-template-columns: 1fr;
+  }
+
+  .quest-item {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .quest-item__edit-fields {
     grid-template-columns: 1fr;
   }
 

@@ -247,7 +247,23 @@
           <span class="quest-item__title"></span>
         </label>
         <span class="quest-item__xp"></span>
-        <button class="quest-item__delete" type="button">刪除</button>
+        <div class="quest-item__actions">
+          <button class="quest-item__edit" type="button">編輯</button>
+          <button class="quest-item__delete" type="button">刪除</button>
+        </div>
+      </div>
+    </template>
+
+    <template id="questEditTemplate">
+      <div class="quest-item quest-item--edit">
+        <div class="quest-item__edit-fields">
+          <input type="text" class="quest-item__input" />
+          <input type="number" class="quest-item__input quest-item__input--xp" min="1" max="500" />
+        </div>
+        <div class="quest-item__actions">
+          <button class="quest-item__save" type="button">儲存</button>
+          <button class="quest-item__cancel" type="button">取消</button>
+        </div>
       </div>
     </template>
 
