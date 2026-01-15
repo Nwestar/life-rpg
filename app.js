@@ -1,11 +1,6 @@
 const STORAGE_KEY = "lifeRpgState";
 const XP_PER_LEVEL = 100;
 const DEFAULT_DAILY_COUNT = 3;
-const DEFAULT_QUEST_POOL = [
-  { id: "daily-exercise", title: "運動 30 分鐘", xp: 30, enabled: true },
-  { id: "daily-create", title: "剪輯 1 支影片", xp: 40, enabled: true },
-  { id: "daily-learn", title: "學習 30 分鐘", xp: 30, enabled: true },
-];
 const ACHIEVEMENTS = [
   { id: "first-task", title: "第一次完成任務" },
   { id: "streak-3", title: "第一次連續 3 天" },
@@ -30,6 +25,7 @@ const dailyDate = document.getElementById("dailyDate");
 const yesterdayXp = document.getElementById("yesterdayXp");
 const yesterdayCompletion = document.getElementById("yesterdayCompletion");
 const rerollButton = document.getElementById("rerollButton");
+const dailyOnboarding = document.getElementById("dailyOnboarding");
 const achievementGrid = document.getElementById("achievementGrid");
 const historyList = document.getElementById("historyList");
 const xpChart = document.getElementById("xpChart");
@@ -66,7 +62,7 @@ const defaultState = {
     count: 0,
     lastCompletedDate: null,
   },
-  questPool: DEFAULT_QUEST_POOL.map((quest) => ({ ...quest })),
+  questPool: [],
   history: [],
   achievements: {},
   share: {
@@ -94,9 +90,7 @@ const loadState = () => {
       ...defaultState.streak,
       ...parsed.streak,
     },
-    questPool: Array.isArray(parsed.questPool) && parsed.questPool.length > 0
-      ? parsed.questPool
-      : DEFAULT_QUEST_POOL.map((quest) => ({ ...quest })),
+    questPool: Array.isArray(parsed.questPool) ? parsed.questPool : [],
     history: Array.isArray(parsed.history) ? parsed.history : [],
     achievements: parsed.achievements || {},
     share: {
@@ -139,6 +133,8 @@ const daysBetween = (fromKey, toKey) => {
 
 const getEnabledQuestPool = () => state.questPool.filter((quest) => quest.enabled);
 
+const canRollDailyTasks = () => getEnabledQuestPool().length >= DEFAULT_DAILY_COUNT;
+
 const shuffleArray = (items) => {
   const shuffled = [...items];
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
@@ -149,10 +145,12 @@ const shuffleArray = (items) => {
 };
 
 const rollDailyTasks = () => {
+  if (!canRollDailyTasks()) {
+    return [];
+  }
   const enabledPool = getEnabledQuestPool();
-  const selectionCount = Math.min(DEFAULT_DAILY_COUNT, enabledPool.length);
   return shuffleArray(enabledPool)
-    .slice(0, selectionCount)
+    .slice(0, DEFAULT_DAILY_COUNT)
     .map((quest) => ({
       id: quest.id,
       title: quest.title,
@@ -249,8 +247,10 @@ const getStreakMultiplier = () => {
 
 const updateDailyForToday = () => {
   const todayKey = formatDateKey();
-  if (state.daily.date === todayKey && state.daily.tasks.length > 0) {
-    return;
+  if (state.daily.date === todayKey) {
+    if (state.daily.tasks.length > 0 || !canRollDailyTasks()) {
+      return;
+    }
   }
 
   if (state.daily.date && state.daily.date !== todayKey) {
@@ -308,7 +308,7 @@ const updateDailyForToday = () => {
 
   state.daily.date = todayKey;
   state.daily.completedCount = 0;
-  state.daily.tasks = rollDailyTasks();
+  state.daily.tasks = canRollDailyTasks() ? rollDailyTasks() : [];
 };
 
 const renderStats = () => {
@@ -358,6 +358,10 @@ const renderTasks = () => {
 
 const renderDailyTasks = () => {
   dailyTaskList.innerHTML = "";
+  dailyOnboarding.hidden = true;
+  if (!canRollDailyTasks()) {
+    dailyOnboarding.hidden = false;
+  }
   state.daily.tasks.forEach((task) => {
     const fragment = dailyTaskTemplate.content.cloneNode(true);
     const item = fragment.querySelector(".task");
@@ -389,7 +393,7 @@ const renderDailyTasks = () => {
 
     dailyTaskList.appendChild(item);
   });
-  const canReroll = state.daily.completedCount === 0 && getEnabledQuestPool().length > 0;
+  const canReroll = state.daily.completedCount === 0 && canRollDailyTasks();
   rerollButton.disabled = !canReroll;
 };
 
@@ -422,12 +426,13 @@ const renderQuestPool = () => {
     toggle.addEventListener("change", () => {
       quest.enabled = toggle.checked;
       saveState(state);
+      render();
     });
 
     deleteButton.addEventListener("click", () => {
       state.questPool = state.questPool.filter((poolQuest) => poolQuest.id !== quest.id);
       saveState(state);
-      renderQuestPool();
+      render();
     });
 
     questList.appendChild(item);
@@ -613,11 +618,11 @@ const addQuest = (title, xp) => {
     enabled: true,
   });
   saveState(state);
-  renderQuestPool();
+  render();
 };
 
 const rerollTodayTasks = () => {
-  if (state.daily.completedCount > 0 || getEnabledQuestPool().length === 0) {
+  if (state.daily.completedCount > 0 || !canRollDailyTasks()) {
     return;
   }
   state.daily.tasks = rollDailyTasks();

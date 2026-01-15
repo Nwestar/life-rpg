@@ -206,6 +206,15 @@ body {
   flex-wrap: wrap;
 }
 
+.daily-onboarding {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px dashed #cbd5f5;
+  background: #f8fafc;
+  color: #475569;
+}
+
 .ghost-button {
   border: 1px dashed #94a3b8;
   background: #ffffff;
