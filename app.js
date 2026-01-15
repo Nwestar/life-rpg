@@ -25,9 +25,9 @@ const levelProgress = document.getElementById("levelProgress");
 const levelMultiplier = document.getElementById("levelMultiplier");
 const streakDisplay = document.getElementById("streakDisplay");
 const dailyTaskList = document.getElementById("dailyTaskList");
-const dailyHistoryList = document.getElementById("dailyHistoryList");
 const dailyDate = document.getElementById("dailyDate");
-const dailyHistoryTitle = document.getElementById("dailyHistoryTitle");
+const yesterdayXp = document.getElementById("yesterdayXp");
+const yesterdayCompletion = document.getElementById("yesterdayCompletion");
 const achievementGrid = document.getElementById("achievementGrid");
 const historyList = document.getElementById("historyList");
 const xpChart = document.getElementById("xpChart");
@@ -43,6 +43,8 @@ const taskTemplate = document.getElementById("taskItemTemplate");
 const dailyTaskTemplate = document.getElementById("dailyTaskTemplate");
 const achievementTemplate = document.getElementById("achievementTemplate");
 const historyItemTemplate = document.getElementById("historyItemTemplate");
+const navButtons = document.querySelectorAll(".nav__button");
+const views = document.querySelectorAll(".view");
 
 const defaultState = {
   tasks: [],
@@ -165,6 +167,12 @@ const getHistoryEntries = () => {
     entries.push(buildHistoryEntryForDate(todayKey, state.daily.tasks, getEffectiveStreak(), false));
   }
   return entries.sort((a, b) => (a.date < b.date ? 1 : -1));
+};
+
+const getYesterdayEntry = () => {
+  const today = toDateFromKey(formatDateKey());
+  const yesterdayKey = formatDateKey(new Date(today.getTime() - 86400000));
+  return getHistoryEntry(yesterdayKey);
 };
 
 const getLevelInfo = (xp) => {
@@ -353,42 +361,16 @@ const renderDailyTasks = () => {
   });
 };
 
-const renderDailyHistory = () => {
-  dailyHistoryList.innerHTML = "";
-  if (!state.daily.history) {
-    dailyHistoryTitle.textContent = "昨日結果";
-    const placeholder = document.createElement("li");
-    placeholder.className = "task";
-    placeholder.textContent = "昨日尚未有任務紀錄";
-    dailyHistoryList.appendChild(placeholder);
+const renderYesterdaySummary = () => {
+  const entry = getYesterdayEntry();
+  if (!entry) {
+    yesterdayXp.textContent = "0 XP";
+    yesterdayCompletion.textContent = "尚未有資料";
     return;
   }
-  dailyHistoryTitle.textContent = `昨日結果 ${formatDateLabel(state.daily.history.date)}`;
-  state.daily.history.tasks.forEach((task) => {
-    const fragment = dailyTaskTemplate.content.cloneNode(true);
-    const item = fragment.querySelector(".task");
-    const title = fragment.querySelector(".task__title");
-    const xpBadge = fragment.querySelector(".task__xp");
-    const status = fragment.querySelector(".task__status");
-    const checkbox = fragment.querySelector(".task__checkbox");
-
-    title.textContent = task.title;
-    xpBadge.textContent = `+${task.xp} XP`;
-    checkbox.disabled = true;
-    checkbox.style.display = "none";
-
-    if (task.status === "failed") {
-      title.classList.add("task__title--failed");
-      status.textContent = "失敗";
-      status.classList.add("task__status--failed");
-    } else {
-      title.classList.add("task__title--done");
-      status.textContent = "完成";
-      status.classList.add("task__status--done");
-    }
-
-    dailyHistoryList.appendChild(item);
-  });
+  yesterdayXp.textContent = `${entry.xpGained} XP`;
+  const allCompleted = entry.tasks.every((task) => task.status === "completed");
+  yesterdayCompletion.textContent = allCompleted ? "全部完成" : "未全部完成";
 };
 
 const renderHistoryTimeline = () => {
@@ -407,6 +389,9 @@ const renderHistoryTimeline = () => {
     xp.textContent = `+${entry.xpGained} XP`;
     streak.textContent = `Streak ${entry.streak} 天`;
     level.textContent = `Lv ${entry.level}`;
+    if (container && entry.date === formatDateKey()) {
+      container.open = true;
+    }
 
     entry.tasks.forEach((task) => {
       const taskRow = document.createElement("div");
@@ -686,7 +671,7 @@ const render = () => {
   renderStats();
   renderTasks();
   renderDailyTasks();
-  renderDailyHistory();
+  renderYesterdaySummary();
   upsertHistoryEntry(
     buildHistoryEntryForDate(state.daily.date, state.daily.tasks, getEffectiveStreak(), false)
   );
@@ -709,6 +694,21 @@ shareButton.addEventListener("click", () => {
 
 timelineShareButton.addEventListener("click", () => {
   generateTimelineShareCard();
+});
+
+navButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const targetView = button.dataset.view;
+    navButtons.forEach((navButton) => {
+      navButton.classList.toggle(
+        "nav__button--active",
+        navButton.dataset.view === targetView
+      );
+    });
+    views.forEach((view) => {
+      view.classList.toggle("view--active", view.dataset.view === targetView);
+    });
+  });
 });
 
 render();

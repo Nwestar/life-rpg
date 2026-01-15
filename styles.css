@@ -15,6 +15,28 @@ body {
   background: radial-gradient(circle at top, #ffffff 0%, #f5f6fb 55%, #eef0f8 100%);
 }
 
+.nav {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.nav__button {
+  border: 1px solid #cbd5f5;
+  background: #ffffff;
+  color: #1f2937;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nav__button--active {
+  background: #6366f1;
+  color: #ffffff;
+  border-color: transparent;
+}
+
 .app {
   max-width: 1100px;
   margin: 0 auto;
@@ -22,6 +44,16 @@ body {
   display: flex;
   flex-direction: column;
   gap: 32px;
+}
+
+.view {
+  display: none;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.view--active {
+  display: flex;
 }
 
 .app__header {
@@ -150,6 +182,7 @@ body {
 .composer,
 .tasks,
 .history,
+.yesterday,
 .achievements {
   background: #ffffff;
   padding: 24px;
@@ -164,6 +197,13 @@ body {
   background: #ecfeff;
   color: #0e7490;
   font-weight: 600;
+}
+
+.yesterday__content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
 }
 
 .daily-history {
@@ -332,15 +372,21 @@ body {
   background: #f8fafc;
 }
 
-.history-item__header {
+.history-item__summary {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  cursor: pointer;
+  list-style: none;
 }
 
 .history-item__date {
   margin: 0;
   font-weight: 600;
+}
+
+.history-item summary::-webkit-details-marker {
+  display: none;
 }
 
 .history-item__xp {
@@ -456,6 +502,10 @@ body {
 }
 
 @media (max-width: 720px) {
+  .nav {
+    flex-wrap: wrap;
+  }
+
   .composer__form {
     grid-template-columns: 1fr;
   }
