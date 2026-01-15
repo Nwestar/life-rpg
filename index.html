@@ -47,7 +47,12 @@
               <h2>每日任務</h2>
               <p class="section-subtitle">每天 00:00 自動更新，未完成將標記失敗。</p>
             </div>
-            <p class="daily__date" id="dailyDate">今日任務</p>
+            <div class="daily__actions">
+              <p class="daily__date" id="dailyDate">今日任務</p>
+              <button class="ghost-button" id="rerollButton" type="button">
+                重新抽選今日任務
+              </button>
+            </div>
           </div>
           <ul class="tasks__list" id="dailyTaskList"></ul>
         </section>
@@ -109,6 +114,26 @@
             下載時間軸分享卡
           </a>
           <canvas id="timelineCanvas" width="1080" height="1920" hidden></canvas>
+        </section>
+
+        <section class="quest-pool">
+          <div class="section-header">
+            <div>
+              <h2>每日任務池</h2>
+              <p class="section-subtitle">管理每日任務抽選池，可停用或刪除任務。</p>
+            </div>
+          </div>
+          <form id="questForm" class="quest-form">
+            <input
+              type="text"
+              id="questTitleInput"
+              placeholder="任務名稱，例如：寫 500 字筆記"
+              required
+            />
+            <input type="number" id="questXpInput" min="1" max="500" value="20" required />
+            <button type="submit">新增任務</button>
+          </form>
+          <div class="quest-list" id="questList"></div>
         </section>
 
         <section class="composer">
@@ -210,6 +235,17 @@
         </summary>
         <div class="history-item__tasks"></div>
       </details>
+    </template>
+
+    <template id="questItemTemplate">
+      <div class="quest-item">
+        <label class="quest-item__main">
+          <input type="checkbox" class="quest-item__toggle" />
+          <span class="quest-item__title"></span>
+        </label>
+        <span class="quest-item__xp"></span>
+        <button class="quest-item__delete" type="button">刪除</button>
+      </div>
     </template>
 
     <script src="app.js"></script>

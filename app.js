@@ -1,9 +1,10 @@
 const STORAGE_KEY = "lifeRpgState";
 const XP_PER_LEVEL = 100;
-const DAILY_TASKS = [
-  { id: "daily-exercise", title: "運動 30 分鐘", xp: 30 },
-  { id: "daily-create", title: "剪輯 1 支影片", xp: 40 },
-  { id: "daily-learn", title: "學習 30 分鐘", xp: 30 },
+const DEFAULT_DAILY_COUNT = 3;
+const DEFAULT_QUEST_POOL = [
+  { id: "daily-exercise", title: "運動 30 分鐘", xp: 30, enabled: true },
+  { id: "daily-create", title: "剪輯 1 支影片", xp: 40, enabled: true },
+  { id: "daily-learn", title: "學習 30 分鐘", xp: 30, enabled: true },
 ];
 const ACHIEVEMENTS = [
   { id: "first-task", title: "第一次完成任務" },
@@ -28,11 +29,16 @@ const dailyTaskList = document.getElementById("dailyTaskList");
 const dailyDate = document.getElementById("dailyDate");
 const yesterdayXp = document.getElementById("yesterdayXp");
 const yesterdayCompletion = document.getElementById("yesterdayCompletion");
+const rerollButton = document.getElementById("rerollButton");
 const achievementGrid = document.getElementById("achievementGrid");
 const historyList = document.getElementById("historyList");
 const xpChart = document.getElementById("xpChart");
 const levelChart = document.getElementById("levelChart");
 const streakChart = document.getElementById("streakChart");
+const questForm = document.getElementById("questForm");
+const questTitleInput = document.getElementById("questTitleInput");
+const questXpInput = document.getElementById("questXpInput");
+const questList = document.getElementById("questList");
 const shareButton = document.getElementById("shareButton");
 const shareDownload = document.getElementById("shareDownload");
 const shareCanvas = document.getElementById("shareCanvas");
@@ -43,6 +49,7 @@ const taskTemplate = document.getElementById("taskItemTemplate");
 const dailyTaskTemplate = document.getElementById("dailyTaskTemplate");
 const achievementTemplate = document.getElementById("achievementTemplate");
 const historyItemTemplate = document.getElementById("historyItemTemplate");
+const questItemTemplate = document.getElementById("questItemTemplate");
 const navButtons = document.querySelectorAll(".nav__button");
 const views = document.querySelectorAll(".view");
 
@@ -59,6 +66,7 @@ const defaultState = {
     count: 0,
     lastCompletedDate: null,
   },
+  questPool: DEFAULT_QUEST_POOL.map((quest) => ({ ...quest })),
   history: [],
   achievements: {},
   share: {
@@ -86,6 +94,9 @@ const loadState = () => {
       ...defaultState.streak,
       ...parsed.streak,
     },
+    questPool: Array.isArray(parsed.questPool) && parsed.questPool.length > 0
+      ? parsed.questPool
+      : DEFAULT_QUEST_POOL.map((quest) => ({ ...quest })),
     history: Array.isArray(parsed.history) ? parsed.history : [],
     achievements: parsed.achievements || {},
     share: {
@@ -124,6 +135,32 @@ const daysBetween = (fromKey, toKey) => {
   const fromDate = toDateFromKey(fromKey);
   const toDate = toDateFromKey(toKey);
   return Math.round((toDate - fromDate) / (1000 * 60 * 60 * 24));
+};
+
+const getEnabledQuestPool = () => state.questPool.filter((quest) => quest.enabled);
+
+const shuffleArray = (items) => {
+  const shuffled = [...items];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
+};
+
+const rollDailyTasks = () => {
+  const enabledPool = getEnabledQuestPool();
+  const selectionCount = Math.min(DEFAULT_DAILY_COUNT, enabledPool.length);
+  return shuffleArray(enabledPool)
+    .slice(0, selectionCount)
+    .map((quest) => ({
+      id: quest.id,
+      title: quest.title,
+      xp: quest.xp,
+      completed: false,
+      status: "pending",
+      earnedXp: 0,
+    }));
 };
 
 const getHistoryEntry = (dateKey) =>
@@ -240,11 +277,9 @@ const updateDailyForToday = () => {
         const missingDate = formatDateKey(
           new Date(toDateFromKey(state.daily.date).getTime() + gap * 86400000)
         );
-        const failedTasks = DAILY_TASKS.map((task) => ({
+        const failedTasks = rollDailyTasks().map((task) => ({
           ...task,
-          completed: false,
           status: "failed",
-          earnedXp: 0,
         }));
         upsertHistoryEntry(buildHistoryEntryForDate(missingDate, failedTasks, 0, true));
       }
@@ -273,12 +308,7 @@ const updateDailyForToday = () => {
 
   state.daily.date = todayKey;
   state.daily.completedCount = 0;
-  state.daily.tasks = DAILY_TASKS.map((task) => ({
-    ...task,
-    completed: false,
-    status: "pending",
-    earnedXp: 0,
-  }));
+  state.daily.tasks = rollDailyTasks();
 };
 
 const renderStats = () => {
@@ -359,6 +389,8 @@ const renderDailyTasks = () => {
 
     dailyTaskList.appendChild(item);
   });
+  const canReroll = state.daily.completedCount === 0 && getEnabledQuestPool().length > 0;
+  rerollButton.disabled = !canReroll;
 };
 
 const renderYesterdaySummary = () => {
@@ -371,6 +403,35 @@ const renderYesterdaySummary = () => {
   yesterdayXp.textContent = `${entry.xpGained} XP`;
   const allCompleted = entry.tasks.every((task) => task.status === "completed");
   yesterdayCompletion.textContent = allCompleted ? "全部完成" : "未全部完成";
+};
+
+const renderQuestPool = () => {
+  questList.innerHTML = "";
+  state.questPool.forEach((quest) => {
+    const fragment = questItemTemplate.content.cloneNode(true);
+    const item = fragment.querySelector(".quest-item");
+    const toggle = fragment.querySelector(".quest-item__toggle");
+    const title = fragment.querySelector(".quest-item__title");
+    const xp = fragment.querySelector(".quest-item__xp");
+    const deleteButton = fragment.querySelector(".quest-item__delete");
+
+    toggle.checked = quest.enabled;
+    title.textContent = quest.title;
+    xp.textContent = `${quest.xp} XP`;
+
+    toggle.addEventListener("change", () => {
+      quest.enabled = toggle.checked;
+      saveState(state);
+    });
+
+    deleteButton.addEventListener("click", () => {
+      state.questPool = state.questPool.filter((poolQuest) => poolQuest.id !== quest.id);
+      saveState(state);
+      renderQuestPool();
+    });
+
+    questList.appendChild(item);
+  });
 };
 
 const renderHistoryTimeline = () => {
@@ -539,6 +600,32 @@ const addTask = (title, xp) => {
   render();
 };
 
+const addQuest = (title, xp) => {
+  const trimmed = title.trim();
+  if (!trimmed) {
+    return;
+  }
+  const safeXp = Math.max(1, Number(xp) || 1);
+  state.questPool.unshift({
+    id: crypto.randomUUID(),
+    title: trimmed,
+    xp: safeXp,
+    enabled: true,
+  });
+  saveState(state);
+  renderQuestPool();
+};
+
+const rerollTodayTasks = () => {
+  if (state.daily.completedCount > 0 || getEnabledQuestPool().length === 0) {
+    return;
+  }
+  state.daily.tasks = rollDailyTasks();
+  state.daily.completedCount = 0;
+  saveState(state);
+  render();
+};
+
 const unlockAchievement = (id) => {
   if (state.achievements[id]?.unlockedAt) {
     return;
@@ -672,6 +759,7 @@ const render = () => {
   renderTasks();
   renderDailyTasks();
   renderYesterdaySummary();
+  renderQuestPool();
   upsertHistoryEntry(
     buildHistoryEntryForDate(state.daily.date, state.daily.tasks, getEffectiveStreak(), false)
   );
@@ -692,8 +780,19 @@ shareButton.addEventListener("click", () => {
   generateShareCard();
 });
 
+rerollButton.addEventListener("click", () => {
+  rerollTodayTasks();
+});
+
 timelineShareButton.addEventListener("click", () => {
   generateTimelineShareCard();
+});
+
+questForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  addQuest(questTitleInput.value, questXpInput.value);
+  questTitleInput.value = "";
+  questTitleInput.focus();
 });
 
 navButtons.forEach((button) => {
