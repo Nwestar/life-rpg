@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Life RPG MVP</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="app__header">
+        <div>
+          <p class="app__subtitle">Life RPG</p>
+          <h1 class="app__title">任務冒險清單</h1>
+        </div>
+        <div class="level-card">
+          <p class="level-card__label">目前等級</p>
+          <p class="level-card__value" id="levelValue">Lv 1</p>
+        </div>
+      </header>
+
+      <section class="stats">
+        <div class="stats__item">
+          <p class="stats__label">總經驗</p>
+          <p class="stats__value" id="totalXp">0 XP</p>
+        </div>
+        <div class="stats__item stats__item--wide">
+          <div class="progress">
+            <div class="progress__bar" id="levelProgress"></div>
+          </div>
+          <p class="stats__hint" id="levelHint">距離 Lv 2 還需要 100 XP</p>
+        </div>
+      </section>
+
+      <section class="composer">
+        <h2>新增任務</h2>
+        <form id="taskForm" class="composer__form">
+          <input
+            type="text"
+            id="taskInput"
+            placeholder="例如：完成晨跑 30 分鐘"
+            required
+          />
+          <input
+            type="number"
+            id="xpInput"
+            min="1"
+            max="500"
+            value="20"
+            required
+          />
+          <button type="submit">加入任務</button>
+        </form>
+      </section>
+
+      <section class="tasks">
+        <div class="tasks__header">
+          <h2>任務清單</h2>
+          <p class="tasks__meta" id="taskCount">0 個任務</p>
+        </div>
+        <ul class="tasks__list" id="taskList"></ul>
+      </section>
+    </main>
+
+    <template id="taskItemTemplate">
+      <li class="task">
+        <label class="task__main">
+          <input type="checkbox" class="task__checkbox" />
+          <span class="task__title"></span>
+        </label>
+        <div class="task__xp"></div>
+        <button class="task__delete" type="button">刪除</button>
+      </li>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
