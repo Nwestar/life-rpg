@@ -12,12 +12,10 @@
         <div>
           <p class="app__subtitle">Life RPG</p>
           <h1 class="app__title">任務冒險清單</h1>
-          <p class="app__streak" id="streakDisplay">連續 0 天</p>
         </div>
         <div class="level-card">
           <p class="level-card__label">目前等級</p>
           <p class="level-card__value" id="levelValue">Lv 1</p>
-          <p class="level-card__xp" id="levelMultiplier">倍率 x1.0</p>
         </div>
       </header>
 
@@ -31,21 +29,6 @@
             <div class="progress__bar" id="levelProgress"></div>
           </div>
           <p class="stats__hint" id="levelHint">距離 Lv 2 還需要 100 XP</p>
-        </div>
-      </section>
-
-      <section class="daily">
-        <div class="section-header">
-          <div>
-            <h2>每日任務</h2>
-            <p class="section-subtitle">每天 00:00 自動更新，未完成將標記失敗。</p>
-          </div>
-          <p class="daily__date" id="dailyDate">今日任務</p>
-        </div>
-        <ul class="tasks__list" id="dailyTaskList"></ul>
-        <div class="daily-history">
-          <p class="daily-history__title" id="dailyHistoryTitle">昨日結果</p>
-          <ul class="tasks__list" id="dailyHistoryList"></ul>
         </div>
       </section>
 
@@ -77,28 +60,6 @@
         </div>
         <ul class="tasks__list" id="taskList"></ul>
       </section>
-
-      <section class="achievements">
-        <div class="section-header">
-          <div>
-            <h2>成就</h2>
-            <p class="section-subtitle">解鎖里程碑，成為更高階冒險者。</p>
-          </div>
-          <button class="share-button" id="shareButton" type="button">
-            產生成就分享卡
-          </button>
-        </div>
-        <div class="achievement-grid" id="achievementGrid"></div>
-        <a
-          class="share-download"
-          id="shareDownload"
-          download="life-rpg-share.png"
-          hidden
-        >
-          下載分享卡
-        </a>
-        <canvas id="shareCanvas" width="1080" height="1920" hidden></canvas>
-      </section>
     </main>
 
     <template id="taskItemTemplate">
@@ -110,27 +71,6 @@
         <div class="task__xp"></div>
         <button class="task__delete" type="button">刪除</button>
       </li>
-    </template>
-
-    <template id="dailyTaskTemplate">
-      <li class="task task--daily">
-        <label class="task__main">
-          <input type="checkbox" class="task__checkbox" />
-          <span class="task__title"></span>
-        </label>
-        <div class="task__xp"></div>
-        <span class="task__status"></span>
-      </li>
-    </template>
-
-    <template id="achievementTemplate">
-      <div class="achievement">
-        <div class="achievement__icon">🏆</div>
-        <div>
-          <p class="achievement__title"></p>
-          <p class="achievement__status"></p>
-        </div>
-      </div>
     </template>
 
     <script src="app.js"></script>

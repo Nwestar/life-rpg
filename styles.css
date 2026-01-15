@@ -16,7 +16,7 @@ body {
 }
 
 .app {
-  max-width: 1100px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 48px 24px 72px;
   display: flex;
@@ -45,23 +45,13 @@ body {
   font-size: 2.2rem;
 }
 
-.app__streak {
-  margin: 12px 0 0;
-  padding: 6px 12px;
-  display: inline-block;
-  background: #fff7ed;
-  color: #c2410c;
-  border-radius: 999px;
-  font-weight: 600;
-}
-
 .level-card {
   padding: 16px 24px;
   border-radius: 18px;
   background: #111827;
   color: #f8fafc;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.25);
-  min-width: 180px;
+  min-width: 160px;
 }
 
 .level-card__label {
@@ -74,12 +64,6 @@ body {
   margin: 0;
   font-size: 1.6rem;
   font-weight: 700;
-}
-
-.level-card__xp {
-  margin: 6px 0 0;
-  font-size: 0.9rem;
-  color: #c7d2fe;
 }
 
 .stats {
@@ -133,48 +117,12 @@ body {
   transition: width 0.2s ease-in-out;
 }
 
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
+.composer {
 
-.section-subtitle {
-  margin: 6px 0 0;
-  color: #64748b;
-}
-
-.daily,
-.composer,
-.tasks,
-.achievements {
   background: #ffffff;
   padding: 24px;
   border-radius: 20px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-}
-
-.daily__date {
-  margin: 0;
-  padding: 8px 14px;
-  border-radius: 999px;
-  background: #ecfeff;
-  color: #0e7490;
-  font-weight: 600;
-}
-
-.daily-history {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px dashed #e2e8f0;
-}
-
-.daily-history__title {
-  margin: 0 0 8px;
-  color: #64748b;
-  font-weight: 600;
 }
 
 .composer h2 {
@@ -214,6 +162,13 @@ body {
   box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
 }
 
+.tasks {
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
 .tasks__header {
   display: flex;
   align-items: center;
@@ -229,7 +184,7 @@ body {
 .tasks__list {
   list-style: none;
   padding: 0;
-  margin: 16px 0 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -244,10 +199,6 @@ body {
   border-radius: 14px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-}
-
-.task--daily {
-  grid-template-columns: 1fr auto auto;
 }
 
 .task__main {
@@ -267,11 +218,6 @@ body {
   color: #94a3b8;
 }
 
-.task__title--failed {
-  text-decoration: line-through;
-  color: #ef4444;
-}
-
 .task__xp {
   padding: 6px 10px;
   border-radius: 999px;
@@ -279,19 +225,6 @@ body {
   color: #4338ca;
   font-weight: 600;
   font-size: 0.9rem;
-}
-
-.task__status {
-  font-weight: 600;
-  color: #475569;
-}
-
-.task__status--failed {
-  color: #dc2626;
-}
-
-.task__status--done {
-  color: #16a34a;
 }
 
 .task__delete {
@@ -308,72 +241,13 @@ body {
   background: #fecaca;
 }
 
-.achievement-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-  margin-top: 16px;
-}
-
-.achievement {
-  display: flex;
-  gap: 12px;
-  padding: 16px;
-  background: #f8fafc;
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  align-items: center;
-}
-
-.achievement--unlocked {
-  border-color: #a5b4fc;
-  background: #eef2ff;
-}
-
-.achievement__icon {
-  font-size: 1.8rem;
-}
-
-.achievement__title {
-  margin: 0 0 6px;
-  font-weight: 600;
-}
-
-.achievement__status {
-  margin: 0;
-  color: #64748b;
-  font-size: 0.9rem;
-}
-
-.share-button {
-  border: none;
-  background: #0f172a;
-  color: #ffffff;
-  padding: 10px 16px;
-  border-radius: 999px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.share-download {
-  display: inline-block;
-  margin-top: 12px;
-  color: #4f46e5;
-  font-weight: 600;
-}
-
 @media (max-width: 720px) {
   .composer__form {
     grid-template-columns: 1fr;
   }
 
-  .task,
-  .task--daily {
+  .task {
     grid-template-columns: 1fr;
     justify-items: start;
-  }
-
-  .section-header {
-    align-items: flex-start;
   }
 }
