@@ -183,7 +183,9 @@ body {
 .tasks,
 .history,
 .yesterday,
-.achievements {
+.achievements,
+.report,
+.report-timeline {
   background: #ffffff;
   padding: 24px;
   border-radius: 20px;
@@ -466,6 +468,58 @@ body {
   gap: 16px;
 }
 
+.report__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.report__summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.report__summary-item {
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.report-timeline__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.report-day {
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 0.85rem;
+  display: grid;
+  gap: 4px;
+}
+
+.report-day__date {
+  font-weight: 600;
+}
+
+.report-day--success {
+  border-color: #86efac;
+  background: #ecfdf5;
+}
+
+.report-day--break {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
 .quest-pool {
   background: #ffffff;
   padding: 24px;
@@ -681,5 +735,9 @@ body {
 
   .history__content {
     grid-template-columns: 1fr;
+  }
+
+  .report-timeline__list {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   }
 }

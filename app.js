@@ -41,6 +41,20 @@ const shareCanvas = document.getElementById("shareCanvas");
 const timelineShareButton = document.getElementById("timelineShareButton");
 const timelineShareDownload = document.getElementById("timelineShareDownload");
 const timelineCanvas = document.getElementById("timelineCanvas");
+const reportShareButton = document.getElementById("reportShareButton");
+const reportShareDownload = document.getElementById("reportShareDownload");
+const reportCanvas = document.getElementById("reportCanvas");
+const monthlyXp = document.getElementById("monthlyXp");
+const monthlyActiveDays = document.getElementById("monthlyActiveDays");
+const monthlyCompletedQuests = document.getElementById("monthlyCompletedQuests");
+const monthlyBestStreak = document.getElementById("monthlyBestStreak");
+const monthlyLevel = document.getElementById("monthlyLevel");
+const last7Xp = document.getElementById("last7Xp");
+const last30Xp = document.getElementById("last30Xp");
+const last30Completed = document.getElementById("last30Completed");
+const last30BestStreak = document.getElementById("last30BestStreak");
+const currentStreak = document.getElementById("currentStreak");
+const reportTimelineList = document.getElementById("reportTimelineList");
 const taskTemplate = document.getElementById("taskItemTemplate");
 const dailyTaskTemplate = document.getElementById("dailyTaskTemplate");
 const achievementTemplate = document.getElementById("achievementTemplate");
@@ -203,6 +217,45 @@ const getHistoryEntries = () => {
     entries.push(buildHistoryEntryForDate(todayKey, state.daily.tasks, getEffectiveStreak(), false));
   }
   return entries.sort((a, b) => (a.date < b.date ? 1 : -1));
+};
+
+const getEntryForDate = (dateKey) => getHistoryEntry(dateKey);
+
+const getDateRange = (days) => {
+  const today = toDateFromKey(formatDateKey());
+  const range = [];
+  for (let offset = days - 1; offset >= 0; offset -= 1) {
+    range.push(formatDateKey(new Date(today.getTime() - offset * 86400000)));
+  }
+  return range;
+};
+
+const getEntriesForRange = (days) => {
+  const range = getDateRange(days);
+  return range.map((dateKey) => ({
+    date: dateKey,
+    entry: getEntryForDate(dateKey),
+  }));
+};
+
+const countCompletedTasks = (entry) =>
+  entry?.tasks?.filter((task) => task.status === "completed").length || 0;
+
+const getBestStreakFromEntries = (entries) =>
+  entries.reduce((best, { entry }) => Math.max(best, entry?.streak || 0), 0);
+
+const getMonthlyEntries = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const dates = Array.from({ length: daysInMonth }, (_, index) =>
+    formatDateKey(new Date(year, month, index + 1))
+  );
+  return dates.map((dateKey) => ({
+    date: dateKey,
+    entry: getEntryForDate(dateKey),
+  }));
 };
 
 const getYesterdayEntry = () => {
@@ -514,7 +567,72 @@ const renderHistoryTimeline = () => {
       tasks.appendChild(taskRow);
     });
 
-    historyList.appendChild(container);
+  historyList.appendChild(container);
+  });
+};
+
+const renderReport = () => {
+  const last7Entries = getEntriesForRange(7);
+  const last30Entries = getEntriesForRange(30);
+  const monthlyEntries = getMonthlyEntries();
+  const last7TotalXp = last7Entries.reduce((sum, item) => sum + (item.entry?.xpGained || 0), 0);
+  const last30TotalXp = last30Entries.reduce((sum, item) => sum + (item.entry?.xpGained || 0), 0);
+  const last30CompletedCount = last30Entries.reduce(
+    (sum, item) => sum + countCompletedTasks(item.entry),
+    0
+  );
+  const monthlyTotalXp = monthlyEntries.reduce(
+    (sum, item) => sum + (item.entry?.xpGained || 0),
+    0
+  );
+  const monthlyCompletedCount = monthlyEntries.reduce(
+    (sum, item) => sum + countCompletedTasks(item.entry),
+    0
+  );
+  const monthlyActiveCount = monthlyEntries.filter(
+    (item) => (item.entry?.xpGained || 0) > 0
+  ).length;
+
+  last7Xp.textContent = `${last7TotalXp} XP`;
+  last30Xp.textContent = `${last30TotalXp} XP`;
+  last30Completed.textContent = `${last30CompletedCount} 件`;
+  last30BestStreak.textContent = `${getBestStreakFromEntries(last30Entries)} 天`;
+  currentStreak.textContent = `${getEffectiveStreak()} 天`;
+
+  monthlyXp.textContent = `${monthlyTotalXp} XP`;
+  monthlyActiveDays.textContent = `${monthlyActiveCount} 天`;
+  monthlyCompletedQuests.textContent = `${monthlyCompletedCount} 件`;
+  monthlyBestStreak.textContent = `${getBestStreakFromEntries(monthlyEntries)} 天`;
+  monthlyLevel.textContent = `Lv ${getLevelInfo(state.totalXp).level} · ${state.totalXp} XP`;
+};
+
+const renderReportTimeline = () => {
+  reportTimelineList.innerHTML = "";
+  const rangeEntries = getEntriesForRange(30);
+  let previousStreak = 0;
+  rangeEntries.forEach(({ date, entry }) => {
+    const item = document.createElement("div");
+    item.className = "report-day";
+    const xpGained = entry?.xpGained || 0;
+    const allCompleted = entry?.tasks?.length
+      ? entry.tasks.every((task) => task.status === "completed")
+      : false;
+    const streakValue = entry?.streak || 0;
+
+    if (allCompleted) {
+      item.classList.add("report-day--success");
+    }
+    if (streakValue === 0 && previousStreak > 0) {
+      item.classList.add("report-day--break");
+    }
+
+    item.innerHTML = `
+      <div class="report-day__date">${formatDateLabel(date)}</div>
+      <div>XP ${xpGained}</div>
+      <div>${allCompleted ? "全部完成" : "未完成"}</div>
+    `;
+    reportTimelineList.appendChild(item);
+    previousStreak = streakValue;
   });
 };
 
@@ -800,6 +918,45 @@ const generateTimelineShareCard = () => {
   timelineShareDownload.textContent = "下載時間軸分享卡";
 };
 
+const generateReportShareCard = () => {
+  const ctx = reportCanvas.getContext("2d");
+  const width = reportCanvas.width;
+  const height = reportCanvas.height;
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, "#0f172a");
+  gradient.addColorStop(1, "#1d4ed8");
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+
+  const last30Entries = getEntriesForRange(30);
+  const last30TotalXp = last30Entries.reduce((sum, item) => sum + (item.entry?.xpGained || 0), 0);
+  const last30CompletedCount = last30Entries.reduce(
+    (sum, item) => sum + countCompletedTasks(item.entry),
+    0
+  );
+  const bestStreak = getBestStreakFromEntries(last30Entries);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 64px Inter, sans-serif";
+  ctx.fillText("Life RPG Report", 80, 140);
+
+  ctx.font = "bold 48px Inter, sans-serif";
+  ctx.fillText(`30 天總 XP ${last30TotalXp}`, 80, 260);
+  ctx.fillText(`最佳連續 ${bestStreak} 天`, 80, 340);
+  ctx.fillText(`完成任務 ${last30CompletedCount} 件`, 80, 420);
+  ctx.fillText(`目前等級 ${getLevelInfo(state.totalXp).level}`, 80, 500);
+
+  ctx.font = "28px Inter, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.7)";
+  ctx.fillText("你的 30 天成長紀錄", 80, height - 120);
+
+  const dataUrl = reportCanvas.toDataURL("image/png");
+  reportShareDownload.href = dataUrl;
+  reportShareDownload.hidden = false;
+  reportShareDownload.textContent = "下載報告分享卡";
+};
+
 const render = () => {
   updateDailyForToday();
   evaluateAchievements();
@@ -813,6 +970,8 @@ const render = () => {
   );
   renderHistoryTimeline();
   renderCharts();
+  renderReport();
+  renderReportTimeline();
   renderAchievements();
   saveState(state);
 };
@@ -834,6 +993,10 @@ rerollButton.addEventListener("click", () => {
 
 timelineShareButton.addEventListener("click", () => {
   generateTimelineShareCard();
+});
+
+reportShareButton.addEventListener("click", () => {
+  generateReportShareCard();
 });
 
 questForm.addEventListener("submit", (event) => {
