@@ -78,6 +78,44 @@
         <ul class="tasks__list" id="taskList"></ul>
       </section>
 
+      <section class="history">
+        <div class="section-header">
+          <div>
+            <h2>歷史時間軸</h2>
+            <p class="section-subtitle">每天的任務成果與成長記錄。</p>
+          </div>
+          <button class="share-button" id="timelineShareButton" type="button">
+            分享時間軸
+          </button>
+        </div>
+        <div class="history__content">
+          <div class="history__list" id="historyList"></div>
+          <div class="history__charts">
+            <div class="chart-card">
+              <p class="chart-card__title">XP 成長曲線</p>
+              <canvas id="xpChart" width="600" height="240"></canvas>
+            </div>
+            <div class="chart-card">
+              <p class="chart-card__title">等級成長曲線</p>
+              <canvas id="levelChart" width="600" height="240"></canvas>
+            </div>
+            <div class="chart-card">
+              <p class="chart-card__title">連續天數曲線</p>
+              <canvas id="streakChart" width="600" height="240"></canvas>
+            </div>
+          </div>
+        </div>
+        <a
+          class="share-download"
+          id="timelineShareDownload"
+          download="life-rpg-timeline.png"
+          hidden
+        >
+          下載時間軸分享卡
+        </a>
+        <canvas id="timelineCanvas" width="1080" height="1920" hidden></canvas>
+      </section>
+
       <section class="achievements">
         <div class="section-header">
           <div>
@@ -130,6 +168,20 @@
           <p class="achievement__title"></p>
           <p class="achievement__status"></p>
         </div>
+      </div>
+    </template>
+    
+    <template id="historyItemTemplate">
+      <div class="history-item">
+        <div class="history-item__header">
+          <p class="history-item__date"></p>
+          <span class="history-item__xp"></span>
+        </div>
+        <div class="history-item__meta">
+          <span class="history-item__streak"></span>
+          <span class="history-item__level"></span>
+        </div>
+        <div class="history-item__tasks"></div>
       </div>
     </template>
 

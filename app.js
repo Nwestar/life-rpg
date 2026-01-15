@@ -29,12 +29,20 @@ const dailyHistoryList = document.getElementById("dailyHistoryList");
 const dailyDate = document.getElementById("dailyDate");
 const dailyHistoryTitle = document.getElementById("dailyHistoryTitle");
 const achievementGrid = document.getElementById("achievementGrid");
+const historyList = document.getElementById("historyList");
+const xpChart = document.getElementById("xpChart");
+const levelChart = document.getElementById("levelChart");
+const streakChart = document.getElementById("streakChart");
 const shareButton = document.getElementById("shareButton");
 const shareDownload = document.getElementById("shareDownload");
 const shareCanvas = document.getElementById("shareCanvas");
+const timelineShareButton = document.getElementById("timelineShareButton");
+const timelineShareDownload = document.getElementById("timelineShareDownload");
+const timelineCanvas = document.getElementById("timelineCanvas");
 const taskTemplate = document.getElementById("taskItemTemplate");
 const dailyTaskTemplate = document.getElementById("dailyTaskTemplate");
 const achievementTemplate = document.getElementById("achievementTemplate");
+const historyItemTemplate = document.getElementById("historyItemTemplate");
 
 const defaultState = {
   tasks: [],
@@ -49,6 +57,7 @@ const defaultState = {
     count: 0,
     lastCompletedDate: null,
   },
+  history: [],
   achievements: {},
   share: {
     lastGeneratedAt: null,
@@ -75,6 +84,7 @@ const loadState = () => {
       ...defaultState.streak,
       ...parsed.streak,
     },
+    history: Array.isArray(parsed.history) ? parsed.history : [],
     achievements: parsed.achievements || {},
     share: {
       ...defaultState.share,
@@ -114,11 +124,63 @@ const daysBetween = (fromKey, toKey) => {
   return Math.round((toDate - fromDate) / (1000 * 60 * 60 * 24));
 };
 
+const getHistoryEntry = (dateKey) =>
+  state.history.find((entry) => entry.date === dateKey);
+
+const upsertHistoryEntry = (entry) => {
+  const existing = getHistoryEntry(entry.date);
+  if (existing?.finalized) {
+    return;
+  }
+  if (existing) {
+    Object.assign(existing, entry);
+  } else {
+    state.history.push(entry);
+  }
+};
+
+const buildHistoryEntryForDate = (dateKey, tasks, streakValue, finalized) => {
+  const xpGained = tasks.reduce((sum, task) => sum + (task.earnedXp || 0), 0);
+  const level = getLevelInfo(state.totalXp).level;
+  return {
+    date: dateKey,
+    tasks: tasks.map((task) => ({
+      id: task.id,
+      title: task.title,
+      xp: task.xp,
+      status: task.completed ? "completed" : task.status === "failed" ? "failed" : "pending",
+      earnedXp: task.earnedXp || 0,
+    })),
+    xpGained,
+    streak: streakValue,
+    level,
+    finalized,
+  };
+};
+
+const getHistoryEntries = () => {
+  const todayKey = formatDateKey();
+  const entries = [...state.history];
+  if (!getHistoryEntry(todayKey)) {
+    entries.push(buildHistoryEntryForDate(todayKey, state.daily.tasks, getEffectiveStreak(), false));
+  }
+  return entries.sort((a, b) => (a.date < b.date ? 1 : -1));
+};
+
 const getLevelInfo = (xp) => {
   const level = Math.floor(xp / XP_PER_LEVEL) + 1;
   const currentXp = xp % XP_PER_LEVEL;
   const nextLevelXp = XP_PER_LEVEL - currentXp;
   return { level, currentXp, nextLevelXp };
+};
+
+const getStreakForDay = (dateKey, hadCompletion) => {
+  if (!hadCompletion) return 0;
+  if (!state.streak.lastCompletedDate) return 1;
+  if (state.streak.lastCompletedDate === dateKey) return state.streak.count;
+  const diff = daysBetween(state.streak.lastCompletedDate, dateKey);
+  if (diff === 1) return state.streak.count + 1;
+  return 1;
 };
 
 const getEffectiveStreak = () => {
@@ -159,6 +221,26 @@ const updateDailyForToday = () => {
       date: state.daily.date,
       tasks: updatedTasks,
     };
+
+    const streakForPreviousDay = getStreakForDay(state.daily.date, hadCompletion);
+    upsertHistoryEntry(
+      buildHistoryEntryForDate(state.daily.date, updatedTasks, streakForPreviousDay, true)
+    );
+
+    if (dayGap > 1) {
+      for (let gap = 1; gap < dayGap; gap += 1) {
+        const missingDate = formatDateKey(
+          new Date(toDateFromKey(state.daily.date).getTime() + gap * 86400000)
+        );
+        const failedTasks = DAILY_TASKS.map((task) => ({
+          ...task,
+          completed: false,
+          status: "failed",
+          earnedXp: 0,
+        }));
+        upsertHistoryEntry(buildHistoryEntryForDate(missingDate, failedTasks, 0, true));
+      }
+    }
 
     if (dayGap > 1) {
       state.streak.count = 0;
@@ -307,6 +389,87 @@ const renderDailyHistory = () => {
 
     dailyHistoryList.appendChild(item);
   });
+};
+
+const renderHistoryTimeline = () => {
+  historyList.innerHTML = "";
+  const entries = getHistoryEntries();
+  entries.forEach((entry) => {
+    const fragment = historyItemTemplate.content.cloneNode(true);
+    const container = fragment.querySelector(".history-item");
+    const date = fragment.querySelector(".history-item__date");
+    const xp = fragment.querySelector(".history-item__xp");
+    const streak = fragment.querySelector(".history-item__streak");
+    const level = fragment.querySelector(".history-item__level");
+    const tasks = fragment.querySelector(".history-item__tasks");
+
+    date.textContent = formatDateLabel(entry.date);
+    xp.textContent = `+${entry.xpGained} XP`;
+    streak.textContent = `Streak ${entry.streak} 天`;
+    level.textContent = `Lv ${entry.level}`;
+
+    entry.tasks.forEach((task) => {
+      const taskRow = document.createElement("div");
+      taskRow.className = "history-task";
+      if (task.status === "failed") {
+        taskRow.classList.add("history-task--failed");
+      } else if (task.status === "completed") {
+        taskRow.classList.add("history-task--completed");
+      }
+      taskRow.innerHTML = `<span>${task.title}</span><span>${task.status === "completed" ? "完成" : task.status === "failed" ? "失敗" : "進行中"}</span>`;
+      tasks.appendChild(taskRow);
+    });
+
+    historyList.appendChild(container);
+  });
+};
+
+const drawLineChart = (canvas, values, color) => {
+  const ctx = canvas.getContext("2d");
+  const width = canvas.width;
+  const height = canvas.height;
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, width, height);
+
+  if (values.length === 0) {
+    return;
+  }
+  const maxValue = Math.max(...values, 1);
+  const padding = 30;
+  const stepX = values.length > 1 ? (width - padding * 2) / (values.length - 1) : 0;
+
+  ctx.strokeStyle = "#e2e8f0";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padding, padding);
+  ctx.lineTo(padding, height - padding);
+  ctx.lineTo(width - padding, height - padding);
+  ctx.stroke();
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  values.forEach((value, index) => {
+    const x = padding + stepX * index;
+    const y = height - padding - (value / maxValue) * (height - padding * 2);
+    if (index === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  });
+  ctx.stroke();
+};
+
+const renderCharts = () => {
+  const entries = getHistoryEntries().slice().reverse();
+  const xpValues = entries.map((entry) => entry.xpGained);
+  const levelValues = entries.map((entry) => entry.level);
+  const streakValues = entries.map((entry) => entry.streak);
+  drawLineChart(xpChart, xpValues, "#6366f1");
+  drawLineChart(levelChart, levelValues, "#22c55e");
+  drawLineChart(streakChart, streakValues, "#f97316");
 };
 
 const renderAchievements = () => {
@@ -476,6 +639,47 @@ const generateShareCard = () => {
   shareDownload.textContent = "下載分享卡";
 };
 
+const generateTimelineShareCard = () => {
+  const ctx = timelineCanvas.getContext("2d");
+  const width = timelineCanvas.width;
+  const height = timelineCanvas.height;
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, "#0f172a");
+  gradient.addColorStop(1, "#312e81");
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 64px Inter, sans-serif";
+  ctx.fillText("Life RPG Timeline", 80, 140);
+
+  const entries = getHistoryEntries().slice(0, 7);
+  ctx.font = "36px Inter, sans-serif";
+  ctx.fillText("最近 7 天", 80, 210);
+
+  ctx.font = "32px Inter, sans-serif";
+  entries.forEach((entry, index) => {
+    const y = 280 + index * 120;
+    ctx.fillText(formatDateLabel(entry.date), 80, y);
+    ctx.fillText(`XP +${entry.xpGained}`, 380, y);
+    ctx.fillText(`Streak ${entry.streak}`, 380, y + 40);
+    ctx.fillText(`Lv ${entry.level}`, 80, y + 40);
+  });
+
+  ctx.font = "28px Inter, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.7)";
+  ctx.fillText("持續記錄，讓成長看得見", 80, height - 120);
+
+  state.share.lastGeneratedAt = new Date().toISOString();
+  saveState(state);
+
+  const dataUrl = timelineCanvas.toDataURL("image/png");
+  timelineShareDownload.href = dataUrl;
+  timelineShareDownload.hidden = false;
+  timelineShareDownload.textContent = "下載時間軸分享卡";
+};
+
 const render = () => {
   updateDailyForToday();
   evaluateAchievements();
@@ -483,6 +687,11 @@ const render = () => {
   renderTasks();
   renderDailyTasks();
   renderDailyHistory();
+  upsertHistoryEntry(
+    buildHistoryEntryForDate(state.daily.date, state.daily.tasks, getEffectiveStreak(), false)
+  );
+  renderHistoryTimeline();
+  renderCharts();
   renderAchievements();
   saveState(state);
 };
@@ -496,6 +705,10 @@ taskForm.addEventListener("submit", (event) => {
 
 shareButton.addEventListener("click", () => {
   generateShareCard();
+});
+
+timelineShareButton.addEventListener("click", () => {
+  generateTimelineShareCard();
 });
 
 render();
